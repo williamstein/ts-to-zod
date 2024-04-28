@@ -1,5 +1,6 @@
 import { test } from "@oclif/test";
 import fs from "fs";
+import { sep, posix } from "path";
 
 /**
  * For the CLI tests to run, we need to run them in a Node environment with
@@ -62,16 +63,20 @@ describe("Oclif-provided Flags Tests", () => {
 
 describe("Config Prompt Tests", () => {
   describe("Skip config prompt", () => {
+    const basicInputPath = makePosixPath("src/cli/fixtures/basic/input.ts");
+    const basicSnapshotPath = makePosixPath(
+      "src/cli/fixtures/basic/output.zod.snapshot.ts"
+    );
+    const basicOutputPath = makePosixPath(
+      "src/cli/fixtures/basic/output.zod.ts"
+    );
+
     test
       // Up Arrow key code \u001B[A + ENTER key code \n with a delay of 2000ms
       .stdin("\u001B[A\n", 2000)
       .stdout()
       .stderr()
-      .command([
-        ".",
-        "src/cli/fixtures/basic/input.ts",
-        "src/cli/fixtures/basic/output.zod.ts",
-      ])
+      .command([".", basicInputPath, basicOutputPath])
       .it(
         "should have selected the right option and generated the file not in the config",
         (ctx) => {
@@ -98,13 +103,11 @@ describe("Config Prompt Tests", () => {
           expect(ctx.stderr).toContain("- Validating generated types");
           expect(ctx.stderr).toContain("✔ Validating generated types");
 
-          expect(
-            fs.readFileSync("src/cli/fixtures/basic/output.zod.ts")
-          ).toEqual(
-            fs.readFileSync("src/cli/fixtures/basic/output.zod.snapshot.ts")
+          expect(fs.readFileSync(basicOutputPath)).toEqual(
+            fs.readFileSync(basicSnapshotPath)
           );
 
-          removeFile("src/cli/fixtures/basic/output.zod.ts");
+          removeFile(basicOutputPath);
         }
       );
   });
@@ -112,4 +115,8 @@ describe("Config Prompt Tests", () => {
 
 function removeFile(filePath: string) {
   fs.unlinkSync(filePath);
+}
+
+function makePosixPath(str: string) {
+  return str.split(sep).join(posix.sep);
 }
