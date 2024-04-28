@@ -1,4 +1,5 @@
 import { test } from "@oclif/test";
+import fs from "fs";
 
 /**
  * For the CLI tests to run, we need to run them in a Node environment with
@@ -6,7 +7,7 @@ import { test } from "@oclif/test";
  * with experimental support for ECMAScript Modules (ESM).
  * See: https://jestjs.io/docs/ecmascript-modules
  */
-describe("CLI Tests", () => {
+describe("Oclif-provided Flags Tests", () => {
   describe("--help flag", () => {
     test
       .stdout()
@@ -55,3 +56,60 @@ describe("CLI Tests", () => {
       });
   });
 });
+
+// describe("Ts-to-zod flags Tests", () => {});
+// describe("EXIT codes Tests", () => {});
+
+describe("Config Prompt Tests", () => {
+  describe("Skip config prompt", () => {
+    test
+      // Up Arrow key code \u001B[A + ENTER key code \n with a delay of 2000ms
+      .stdin("\u001B[A\n", 2000)
+      .stdout()
+      .stderr()
+      .command([
+        ".",
+        "src/cli/fixtures/basic/input.ts",
+        "src/cli/fixtures/basic/output.zod.ts",
+      ])
+      .it(
+        "should have selected the right option and generated the file not in the config",
+        (ctx) => {
+          expect(ctx.stdout).toMatchInlineSnapshot(`
+          "? You have multiple configs available in "ts-to-zod.config.js"
+           What do you want? (Use arrow keys)
+          ❯ Execute all configs (--all) 
+            Execute "example" config (--config=example) 
+            Execute "example/person" config (--config=example/person) 
+            Execute "config" config (--config=config) 
+            Don't use the config ? You have multiple configs available in "ts-to-zod.config.js"
+           What do you want? 
+            Execute all configs (--all) 
+            Execute "example" config (--config=example) 
+            Execute "example/person" config (--config=example/person) 
+            Execute "config" config (--config=config) 
+          ❯ Don't use the config ? You have multiple configs available in "ts-to-zod.config.js"
+           What do you want? Don't use the config
+          🎉 Zod schemas generated!
+          "
+          `);
+
+          // Ora spinner outputs to stderr by default, we
+          expect(ctx.stderr).toContain("- Validating generated types");
+          expect(ctx.stderr).toContain("✔ Validating generated types");
+
+          expect(
+            fs.readFileSync("src/cli/fixtures/basic/output.zod.ts")
+          ).toEqual(
+            fs.readFileSync("src/cli/fixtures/basic/output.zod.snapshot.ts")
+          );
+
+          removeFile("src/cli/fixtures/basic/output.zod.ts");
+        }
+      );
+  });
+});
+
+function removeFile(filePath: string) {
+  fs.unlinkSync(filePath);
+}
