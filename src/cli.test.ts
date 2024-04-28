@@ -103,8 +103,8 @@ describe("Config Prompt Tests", () => {
           expect(ctx.stderr).toContain("- Validating generated types");
           expect(ctx.stderr).toContain("✔ Validating generated types");
 
-          expect(fs.readFileSync(basicOutputPath).toString()).toEqual(
-            fs.readFileSync(basicSnapshotPath).toString()
+          expect(fs.readFileSync(basicOutputPath, "utf-8").toString()).toEqual(
+            fs.readFileSync(basicSnapshotPath, "utf-8").toString()
           );
 
           removeFile(basicOutputPath);
